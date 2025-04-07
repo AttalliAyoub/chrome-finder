@@ -1,34 +1,36 @@
-import { } from '@std/fs';
+import { AccessMode, accessSync } from '@attalliayoub/fs-access';
 
 export const newLineRegex = /\r?\n/;
 
-export function sort(installations, priorities) {
-    const defaultPriority = 10;
-    // assign priorities
-    return installations
-        .map((inst) => {
-            for (const pair of priorities) {
-                if (pair.regex.test(inst)) {
-                    return { path: inst, weight: pair.weight };
-                }
-            }
-            return { path: inst, weight: defaultPriority };
-        })
-        // sort based on priorities
-        .sort((a, b) => (b.weight - a.weight))
-        // remove priority flag
-        .map(pair => pair.path);
+export interface PriorityPair {
+    regex: RegExp;
+    weight: number;
 }
 
-export function canAccess(file) {
-    if (!file) {
-        return false;
-    }
+export interface PriorityResult {
+    path: PathLike;
+    weight: number;
+}
 
+export type PathLike = string | URL;
+
+export function sort(installations: PathLike[], priorities: PriorityPair[]): PathLike[] {
+    const list: PriorityResult[] = installations
+        .map((inst) => {
+            for (const pair of priorities)
+                if (pair.regex.test(inst.toString()))
+                    return { path: inst, weight: pair.weight };
+            return { path: inst, weight: 10 };
+        });
+    return list.sort((a, b) => (b.weight - a.weight)).map(pair => pair.path);
+}
+
+export function canAccess(file: string | URL) {
+    if (!file) return false;
     try {
-        fs.accessSync(file);
+        accessSync(file);
         return true;
-    } catch (e) {
+    } catch {
         return false;
     }
 }
@@ -36,9 +38,9 @@ export function canAccess(file) {
 export function isExecutable(file: string | URL) {
     if (!file) return false;
     try {
-        const stat = Deno.statSync(file);
-        return stat.isFile;
-    } catch (_error) {
+        accessSync(file, AccessMode.X_OK);
+        return true;
+    } catch {
         return false;
     }
 }
