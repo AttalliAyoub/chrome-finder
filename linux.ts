@@ -1,7 +1,5 @@
-import type { PriorityPair } from "./types.ts";
-// const { execSync, execFileSync } = require("child_process");
 import { join } from "@std/path";
-import type { PathLike } from "./types.ts";
+import type { PathLike, PriorityPair } from "./types.ts";
 import { canAccess, isExecutable, sort } from "./util.ts";
 
 function findChromeExecutablesForLinuxDesktop(folder: PathLike): PathLike[] {
@@ -11,42 +9,19 @@ function findChromeExecutablesForLinuxDesktop(folder: PathLike): PathLike[] {
 	if (!canAccess(folder)) return [];
 
 	const installations: PathLike[] = [];
-	// let execPaths;
-	// execPaths = execSync(
-	// 	`find "${folder}" -type f -exec grep -E "${chromeExecRegex}" "{}" \\; | awk -F '=' '{print $2}'`,
-	// );
-
-	// TODO: Check if the execPath is a executable
-	const executablePath =
-		`find "${folder}" -type f -exec grep -E "${chromeExecRegex}" "{}" \\; | awk -F '=' '{print $2}'`;
-	console.log("executablePath", executablePath);
 
 	// Output of the grep & print looks like:
 	//    /opt/google/chrome/google-chrome --profile-directory
 	//    /home/user/Downloads/chrome-linux/chrome-wrapper %U
-	const { stdout } = new Deno.Command("find", {
+	const { stdout } = new Deno.Command("sh", {
 		args: [
-			`"${folder}"`,
-			"-type",
-			"f",
-			"-exec",
-			"grep",
-			"-E",
-			`"${chromeExecRegex}"`,
-			`"{}"`,
-			"\\;",
-			"|",
-			"awk",
-			"-F",
-			`'='`,
-			`'{print $2}'`,
+			"-c",
+			`find "${folder}" -type f -exec grep -E "${chromeExecRegex}" "{}" \\; | awk -F '=' '{print $2}'`,
 		],
-		// stdout: 'piped',
 	}).outputSync();
+
 	const execPath = new TextDecoder().decode(stdout);
-	// const newLineRegex = /\r?\n/;
 	const execPaths = execPath
-		// .split(newLineRegex)
 		.split(/\r?\n/)
 		.map((execPath) => execPath.replace(argumentsRegex, "$1"));
 
@@ -65,11 +40,7 @@ function findChromeExecutablesForLinuxDesktop(folder: PathLike): PathLike[] {
  */
 export function linux() {
 	let installations: PathLike[] = [];
-
-	// TODO: Check if the user is using a gnome based distro
 	const homedir = Deno.env.get("HOME") || Deno.env.get("USERPROFILE");
-	console.log("homedir", homedir);
-
 	// 2. Look into the directories where .desktop are saved on gnome based distro's
 	const desktopInstallationFolders = [
 		join(homedir!, ".local/share/applications/"),
@@ -103,7 +74,7 @@ export function linux() {
 		];
 		const validChromePaths: PathLike[] = [];
 		for (const possiblePath of possibleChromePaths) {
-			const chromePathToTest = possiblePath + "/" + executable;
+			const chromePathToTest = join(possiblePath, executable);
 			if (!isExecutable(chromePathToTest)) continue;
 			if (!chromePathToTest) continue;
 			installations.push(chromePathToTest);
@@ -111,28 +82,19 @@ export function linux() {
 		}
 
 		// skip asking "which" command if the binary was found by searching the known paths.
-		if (validChromePaths.length) return;
+		if (validChromePaths.length) continue;
 
 		try {
-			
-			// const chromePath = execFileSync("which", [executable], {
-			// 	stdio: [null, "pipe", null],
-			// }).toString().split(/\r?\n/)[0];
-
 			const { stdout } = new Deno.Command("which", {
 				args: [executable],
 				stdin: "null",
 				stdout: "piped",
 				stderr: "null",
 			}).outputSync();
-
-
-			const chromePath = new TextDecoder().decode(stdout).split(/\r?\n/)[0];
-			
-			// TODO: Check if the execPath is a executable
-			console.log("chromePath", chromePath);
+			const chromePath =
+				new TextDecoder().decode(stdout).split(/\r?\n/)[0];
 			if (canAccess(chromePath)) installations.push(chromePath);
-		} catch (err) {
+		} catch (_err) {
 			// cmd which not installed.
 		}
 	}
