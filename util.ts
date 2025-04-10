@@ -1,6 +1,7 @@
 import { AccessMode, accessSync } from "@attalliayoub/fs-access";
 import type { PathLike, PriorityPair, PriorityResult } from "./types.ts";
 
+// TODO: Add a way to get the path of the executable
 // export const newLineRegex = /\r?\n/;
 
 export function sort(
