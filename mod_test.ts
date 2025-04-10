@@ -1,6 +1,9 @@
-import { assertEquals } from "@std/assert";
-import { add } from "./mod.ts";
+import { assert } from '@std/assert';
+import { findChrome } from "./mod.ts";
 
-Deno.test(function addTest() {
-	assertEquals(add(2, 3), 5);
+Deno.test(function chromePath() {
+	const chromePath = findChrome().toString();
+	assert(chromePath.length > 0);
+	assert(chromePath.includes("chrom"));
+	console.log(chromePath);
 });

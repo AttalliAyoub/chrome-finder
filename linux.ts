@@ -20,7 +20,7 @@ function findChromeExecutablesForLinuxDesktop(folder: PathLike): PathLike[] {
 		],
 	}).outputSync();
 
-	const execPath = new TextDecoder().decode(stdout);
+	const execPath = new TextDecoder().decode(stdout).trim();
 	const execPaths = execPath
 		.split(/\r?\n/)
 		.map((execPath) => execPath.replace(argumentsRegex, "$1"));
@@ -92,7 +92,7 @@ export function linux() {
 				stderr: "null",
 			}).outputSync();
 			const chromePath =
-				new TextDecoder().decode(stdout).split(/\r?\n/)[0];
+				new TextDecoder().decode(stdout).trim().split(/\r?\n/)[0];
 			if (canAccess(chromePath)) installations.push(chromePath);
 		} catch (_err) {
 			// cmd which not installed.
