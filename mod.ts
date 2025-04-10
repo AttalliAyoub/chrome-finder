@@ -1,8 +1,9 @@
 import { darwin } from './darwin.ts';
 import { linux } from './linux.ts';
+import type { PathLike } from "./types.ts";
 import { win32 } from './win32.ts';
 
-export type { PathLike } from "./types.ts";
+export type { PathLike };
 
 const ERROR_PLATFORM_NOT_SUPPORT = new Error("platform not support");
 const ERROR_NO_INSTALLATIONS_FOUND = new Error("no chrome installations found");
@@ -14,7 +15,7 @@ const ERROR_NO_INSTALLATIONS_FOUND = new Error("no chrome installations found");
  * if no executable chrome find, ERROR_NO_INSTALLATIONS_FOUND will be throw
  * if platform is not one if ['win32','darwin','linux'], ERROR_PLATFORM_NOT_SUPPORT will be throw
  */
-export function findChrome() {
+export function findChrome(): PathLike {
 	const { os } = Deno.build;
 	let installations = [];
 	
